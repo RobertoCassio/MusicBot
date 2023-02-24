@@ -1,7 +1,12 @@
 import asyncio
-
+from selenium import webdriver
+from selenium.common import NoSuchElementException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 import discord
 from discord.ext import commands
+import time
+import textwrap
 
 from yt_dlp import YoutubeDL
 
@@ -14,6 +19,7 @@ class music_cog(commands.Cog):
         self.is_paused = False
 
         self.music_queue = []
+        self.music_name = []
         self.YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist': 'True'}  # Não pega áudio de playlist
         self.FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
                                'options': '-vn'}
@@ -43,7 +49,7 @@ class music_cog(commands.Cog):
 
         else:
             self.is_playing = False
-            self.leave_away()
+            asyncio.create_task(self.leave_away())
 
     async def play_music(self, ctx):
         if len(self.music_queue) > 0:
@@ -60,6 +66,7 @@ class music_cog(commands.Cog):
                 await self.vc.move_to(self.music_queue[0][1])
 
             song_name = self.music_queue[0][0]['title']
+            self.music_name = song_name
             self.music_queue.pop(0)
             self.vc.play(discord.FFmpegPCMAudio(m_url, **self.FFMPEG_OPTIONS), after=lambda e: self.play_next())
 
@@ -86,7 +93,6 @@ class music_cog(commands.Cog):
                 if self.is_playing == False:
                     await self.play_music(ctx)
                     asyncio.create_task(self.leave_away(ctx))
-
 
     @commands.command(name="pause", aliases=['parar', 'stop'], help="Para a música? lol")
     async def pause(self, ctx):
@@ -128,18 +134,54 @@ class music_cog(commands.Cog):
         else:
             await ctx.send("Nenhuma música na fila")
 
-    @commands.command(name="clear", aliases=['c'], help="Limpa a fila")
+    @commands.command(name="clear", aliases=['c'], help="Limpa a fila.")
     async def clear(self, ctx):
         if self.vc != None and self.is_playing:
             self.vc.stop()
         self.music_queue = []
         await ctx.send("Fila de música limpa!")
 
-    @commands.command(name="leave", aliases=["sair"], help="Retira o bot do canal")
-    async def leave(self, ctx, *args):
+    @commands.command(name="leave", aliases=["sair"], help="Retira o bot do canal.")
+    async def leave(self, *args):
         self.is_playing = False
         self.is_paused = False
         await self.vc.disconnect()
+
+    @commands.command(name="lyrics", aliases=['letras', 'l', 'letra'], help="Mostra a letra da música.")
+    async def lyrics(self, ctx):
+        print("Lyrics chamado")
+        options = webdriver.ChromeOptions()
+        options.add_argument("--headless")
+
+        drive = webdriver.Chrome(options=options)
+        print("WebDriver Aberto")
+
+        print('chamando a música')
+
+        drive.get('https://www.letras.mus.br/')
+        print("Entrando no letras")
+        elem = drive.find_element(By.ID, 'main_suggest')
+        elem.clear()
+        elem.send_keys(self.music_name)
+        elem.send_keys(Keys.ENTER)
+        print("Busca feita com sucesso")
+
+        elem = drive.find_element(By.XPATH,
+                                  '/html/body/div[1]/div[1]/div[1]/div[3]/div/div/div/div/div/div/div/div[5]/div['
+                                  '2]/div/div/div[1]/div[1]/div[1]/div[1]/div/a')
+        elem.click()
+        print("Página encontra com sucesso")
+
+        try:
+            letra = drive.find_element(By.CLASS_NAME, 'cnt-letra').text
+        except NoSuchElementException:
+            letra = drive.find_element(By.CLASS_NAME, 'cnt-trad_l ').text
+
+        print(f'Segue a letra: \n{letra}')
+        chunks = textwrap.wrap(letra, width=2000, replace_whitespace=False)
+        await ctx.send("Segue a letra:")
+        for chunk in chunks:
+            await ctx.send(chunk)
 
     async def leave_away(self, ctx):
         if self.is_playing and self.is_paused:
@@ -150,7 +192,7 @@ class music_cog(commands.Cog):
             await asyncio.sleep(10)
 
             if not self.is_playing:
-                await asyncio.sleep(10)
+                await asyncio.sleep(30)
 
                 if not self.is_playing:
                     await ctx.send("Vazando por Inatividade! See Ya!")

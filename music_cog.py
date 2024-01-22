@@ -5,7 +5,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import discord
 from discord.ext import commands
-import time
 import textwrap
 
 from yt_dlp import YoutubeDL
@@ -27,12 +26,11 @@ class music_cog(commands.Cog):
 
     def search_yt(self, item):
         with YoutubeDL(self.YDL_OPTIONS) as ydl:
-            try:
-                info = ydl.extract_info("ytsearch:%s" % item, download=False)['entries'][0]
-                print(f"URL: {info['formats'][3]['url']}")
-
-            except Exception:
-                return False
+                try:
+                    info = ydl.extract_info("ytsearch:%s" % item, download=False)['entries'][0]
+                    print(f"URL: {info['formats'][3]['url']}")
+                except Exception:
+                    return False
         return {'source': info['formats'][3]['url'], 'title': info['title']}
 
     def play_next(self):
@@ -184,10 +182,10 @@ class music_cog(commands.Cog):
             await ctx.send(chunk)
 
     async def leave_away(self, ctx):
-        if self.is_playing and self.is_paused:
-            print("Voice is playing, returning...")
+        if self.is_playing:
+            print("Voice is playing, continuing...")
             return
-        print("Voice is not playing, continuing...")
+        print("Voice is not playing, returning...")
         while True:
             await asyncio.sleep(10)
 

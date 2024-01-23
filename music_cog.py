@@ -28,10 +28,11 @@ class music_cog(commands.Cog):
         with YoutubeDL(self.YDL_OPTIONS) as ydl:
                 try:
                     info = ydl.extract_info("ytsearch:%s" % item, download=False)['entries'][0]
-                    print(f"URL: {info['formats'][3]['url']}")
+                    print(f"URL: {info['formats'][4]['url']}")
+
                 except Exception:
                     return False
-        return {'source': info['formats'][3]['url'], 'title': info['title']}
+        return {'source': info['formats'][4]['url'], 'title': info['title']}
 
     def play_next(self):
         if len(self.music_queue) > 0:

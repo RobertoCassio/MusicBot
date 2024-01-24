@@ -93,7 +93,7 @@ class music_cog(commands.Cog):
                     await self.play_music(ctx)
                     asyncio.create_task(self.leave_away(ctx))
 
-    @commands.command(name="pause", aliases=['parar', 'stop'], help="Para a música? lol")
+    @commands.command(name="pause", aliases=['parar', 'stop'], help="Para a música?")
     async def pause(self, ctx):
         if self.is_playing:
             self.is_playing = False
@@ -149,13 +149,13 @@ class music_cog(commands.Cog):
     @commands.command(name="lyrics", aliases=['letras', 'l', 'letra'], help="Mostra a letra da música.")
     async def lyrics(self, ctx):
         print("Lyrics chamado")
-        options = webdriver.ChromeOptions()
-        options.add_argument("--headless")
+      #  options = webdriver.ChromeOptions()
+      #  options.add_argument("--headless")
 
-        drive = webdriver.Chrome(options=options)
+        drive = webdriver.Chrome()
         print("WebDriver Aberto")
 
-        print('chamando a música')
+        print('Chamando a música')
 
         drive.get('https://www.letras.mus.br/')
         print("Entrando no letras")
